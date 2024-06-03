@@ -3,6 +3,9 @@
 # to test UI designs without needing physical access to the board
 # Author: Jake Dolan
 
+# Due to the limited nature of the Micropython board, please do not use images!
+# Please only use canvas.create_line, canvas.create_rectangle and canvas.create_text
+# !!!! IMPORTANT ^^^
 
 import tkinter as tk
 
