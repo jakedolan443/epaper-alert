@@ -136,6 +136,9 @@ class EPaperDisplayDummy():
 
     def draw_content(self, content):
         # Receives verified and processed alert data from the AlertSystem and draws it to the screen
+        # The alert format is like so:
+        # content['alert_type'] = "Flood", content['severity'] = 1, content['Info'] = "Seek higher ground"
+        # When creating a UI, use all of this data! Please all stick to using the colours black, white and red.
 
         # Clear the canvas
         self.canvas.delete("all")
