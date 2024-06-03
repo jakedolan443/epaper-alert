@@ -5,7 +5,7 @@
 # File:    epaper-groupdevelopmentfile.py
 #
 # Purpose: This file is the prototype for the alert ePaper display. As this
-#          file is intended for group development, it uses a simulated board.
+#          file is intended for group development, it uses a simulated Tkinter display.
 #          When finished, the code in this script will be optimised and translated
 #          into MicroPython for running on a microcontroller + ePaper display.
 #
