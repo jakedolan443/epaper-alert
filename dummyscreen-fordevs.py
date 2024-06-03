@@ -38,8 +38,6 @@ class EInkDisplayDummy:
         # Draw a line
         self.canvas.create_line(0, 0, self.canvas_width, self.canvas_height, fill='black')
 
-        # Draw a circle
-        self.canvas.create_oval(10, 10, 50, 50, outline='black', fill='black')
 
 if __name__ == "__main__":
     root = tk.Tk()
