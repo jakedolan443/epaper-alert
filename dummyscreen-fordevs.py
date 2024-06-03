@@ -5,6 +5,7 @@
 
 # Due to the limited nature of the Micropython board, please do not use images!
 # Please only use canvas.create_line, canvas.create_rectangle and canvas.create_text
+# Please only use the colours black, white and red, as this is what the epaper display supports.
 # !!!! IMPORTANT ^^^
 
 import tkinter as tk
