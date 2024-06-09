@@ -54,7 +54,7 @@ class AlertSystem:
 
 # ------------------------------------------------------------------------------ #
 #
-# Authors: Jake Dolan, ... (add your name here if you contributed to the class)
+# Authors: Jake Dolan (add your name here if you contributed to the class)
 #
 # Class:   AlertReceiver
 #
@@ -68,6 +68,7 @@ class AlertReceiver:
     def __init__(self, host='0.0.0.0', port=PORT):
         self.host = host
         self.port = port
+        self.alert_handler = None
 
     def set_alert_handler(self, alert_handler):
         self.alert_handler = alert_handler
@@ -76,23 +77,41 @@ class AlertReceiver:
         # Send verified data to the alert system for further processing
         self.alert_handler.process_data(data)
 
-    def verify_connection(self, connection):
-        # Ensure that a connection comes from an intended host and contains the
-        # Correct authentication keys (please implement!)
-        return True;
+    def verify_connection(self, data, address):
+        # Implement the logic to verify that the connection comes from an intended host
+        # and contains the correct authentication keys
+
+        # Verify host
+        intended_hosts = ['127.0.0.1', '192.168.1.1']  # Add intended hosts here
+        if address[0] not in intended_hosts:
+            return False
+
+        # Verify authentication code
+        auth_code = data[:4]
+        if auth_code != b"1111":
+            return False
+
+        return True
 
     def listen(self):
-        # This method should begin listening on a port for connections using sockets
-        # PLEASE IMPLEMENT!
-        # Any connections while listening should be verified in the verify_connection(data) method
-        # If verification is successful, the data should then be sent to the AlertSystem for processing.
-        # It can be sent to the AlertSystem through the send_received_data(data) method.
+        # Set up a socket to listen for connections
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind((self.host, self.port))
+            s.listen()
+            print(f"Listening on {self.host}:{self.port}...")
 
-        while 1:
-            print("Listener not yet implemented!")
-            self.send_received_data("No data \nreceived..\n socket not\n implemented!")
-            time.sleep(10)
-        return;
+            while True:
+                conn, addr = s.accept()
+                with conn:
+                    print(f"Connected by {addr}")
+                    data = conn.recv(1024)
+                    if self.verify_connection(data, addr):
+                        self.send_received_data(data[4:].decode())  # Remove auth code before sending
+                        print(data)
+                    else:
+                        print(f"Connection from {addr} not verified or authentication failed.")
+                time.sleep(1)
+
 
 
 # ------------------------------------------------------------------------------ #
