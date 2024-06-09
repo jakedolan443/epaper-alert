@@ -1,7 +1,6 @@
 import socket
 
-PORT = 9005
-
+PORT = 9000
 
 def create_test_packet(auth_code, custom_string, size=1024):
     # Ensure the authentication code is exactly 4 bytes
