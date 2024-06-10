@@ -13,6 +13,7 @@
 import tkinter as tk
 import threading
 import time
+import socket
 
 # Set constant variables
 SCREEN_WIDTH = 128
