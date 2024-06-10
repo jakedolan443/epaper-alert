@@ -18,7 +18,7 @@ import socket
 
 # Set constant variables
 SCREEN_WIDTH = 128
-SCREEN_HEIGHT = 256
+SCREEN_HEIGHT = 296
 PORT = 9000
 
 # ------------------------------------------------------------------------------ #
