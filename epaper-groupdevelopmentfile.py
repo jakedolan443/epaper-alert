@@ -13,6 +13,7 @@
 import tkinter as tk
 import threading
 import time
+import math
 import socket
 
 # Set constant variables
@@ -22,7 +23,7 @@ PORT = 9000
 
 # ------------------------------------------------------------------------------ #
 #
-# Authors: Jake Dolan, ... (add your name here if you contributed to the class)
+# Authors: Jake Dolan, Faizan Khan
 #
 # Class:   AlertSystem
 #
@@ -42,20 +43,77 @@ class AlertSystem:
     def attach_display(self, display):
         self.display = display
 
-    def process_data(self, data):
-        # the alert format that the screen takes:
-        # an alert_type e.g. "Flood"
-        # a severity e.g. "1 - severe, 5 - not important"
-        # info e.g. "Get to higher ground"
-        new_alert = {"alert_type":"None", "severity":"5", "info":data}
+    def get_alert_type(self, alert_string):
+        alert_string = alert_string.lower()
+        keyword_alert_dict = { #potentially extend to add more warnings but for now this is all we have
+            "flood":"Flood",
+            "flooding":"Flood",
+            "torrential rain":"Flood",
+             "typhoon":"Typhoon",
+             "disease":"Disease",
+             "virus":"Disease",
+             "drought":"Drought"}
+        alert_string = alert_string.lower()
+        alert_warning = ""
+        for keyword,alert in keyword_alert_dict.items():
+            if keyword in alert_string:
+                alert_warning = alert
+                print(alert_warning)
 
-        # send the newily compiled alert to the display class to be shown on screen.
-        self.display.draw_content(new_alert)
+        if not alert_warning:
+            return alert_string
+        else:
+            alert_warning = alert_warning.rstrip(' ,')
+            return alert_warning
+
+# #get_alert_type("We have detected that there is a typhoons and flooding hitting the provinces")  - testing more than one hazard
+
+    def get_severity_level(self, alert_string):
+        severity_level_dict = { #potentially extend to add more warnings but for now this is all we have
+            "low":1,
+            "moderate":2,
+            "high":3,
+             "severe":4,
+             "critical":5,
+             "disease":3,
+             "virus":4,
+             "minor":1,
+              "significant":3,
+              "major":4,
+            "negligble":1,
+            "dangerous":5}
+        alert_string = alert_string.lower()
+        for keyword,alert in severity_level_dict.items():
+            if keyword in alert_string:
+                alert_warning = alert
+                break
+            else:
+                alert_warning=1 #if we dont know the severity its just going to be given 1 for now to prevent panic
+        return alert_warning
+
+    def process_data(self, data):
+        if data == '':
+            print("No valid data detected")
+            return
+        if not '.' in data: #checking if there if the alert message doesnt stick to normal structure with a period
+            alert_severity = self.get_severity_level(data)
+            type_of_alert = self.get_alert_type(data)
+            new_alert = {"alert_type":type_of_alert,"severity":alert_severity,"info":data}
+            self.display.draw_content(new_alert)
+        else:
+            first_period_index = data.find('.')
+            second_period_index = data.find('.',first_period_index+1)
+            action_needed = data[first_period_index+1:second_period_index] # gets the info/action needed for alert
+            alert = data[:first_period_index] #gets the alert message itself
+            alert_severity = self.get_severity_level(alert)
+            type_of_alert = self.get_alert_type(alert)
+            new_alert = {"alert_type":type_of_alert,"severity":alert_severity,"info":action_needed}
+            self.display.draw_content(new_alert)
 
 
 # ------------------------------------------------------------------------------ #
 #
-# Authors: Jake Dolan (add your name here if you contributed to the class)
+# Authors: Jake Dolan
 #
 # Class:   AlertReceiver
 #
@@ -108,16 +166,13 @@ class AlertReceiver:
                     data = conn.recv(1024)
                     if self.verify_connection(data, addr):
                         self.send_received_data(data[4:].decode())  # Remove auth code before sending
-                        print(data)
                     else:
                         print(f"Connection from {addr} not verified or authentication failed.")
                 time.sleep(1)
 
-
-
 # ------------------------------------------------------------------------------ #
 #
-# Authors: Jake Dolan, ... (add your name here if you contributed to the class)
+# Authors: Jake Dolan, Rory White
 #
 # Class:   EPaperDisplayDummy
 #
@@ -148,28 +203,243 @@ class EPaperDisplayDummy():
         self.canvas = tk.Canvas(self.root, width=self.canvas_width, height=self.canvas_height, bg='white')
         self.canvas.pack()
 
-        # Draw initial content on the canvas
-        self.draw_content({"alert_type":"None", "severity":"1", "info":"No current alerts"})
-
     def run(self):
         self.root.mainloop()
 
     def draw_content(self, content):
-        # Receives verified and processed alert data from the AlertSystem and draws it to the screen
-        # The alert format is like so:
-        # content['alert_type'] = "Flood", content['severity'] = 1, content['Info'] = "Seek higher ground"
-        # When creating a UI, use all of this data! Please all stick to using the colours black, white and red.
+        self.canvas.delete('all')
 
-        # Clear the canvas
-        self.canvas.delete("all")
+        if content['alert_type'] == "Flood":
+            self.draw_flood()
+            self.canvas.create_text(67, 204, text="Move to higher ground \ntìm kiếm vùng đất caot \nស្វែងរកដីខ្ពស់ស្វែងរកជង។  ", font='System, 7', anchor='c')
+        elif content['alert_type'] == "Typhoon":
+            self.draw_typhoon()
+            self.canvas.create_text(67, 204, text="Seek shelter \ntìm nơi trú ẩn \nស្វែងរកដីខ្ព។  ", font='System, 7', anchor='c')
+        elif content['alert_type'] == "Heatwave":
+            self.draw_heatwave()
+            self.canvas.create_text(67, 204, text="Avoid sun \ntiết kiệm nước \n ស្វែងរកដីខ្ព។  ", font='System, 7', anchor='c')
+        elif content['alert_type'] == "Disease":
+            self.draw_disease()
+            self.canvas.create_text(67, 204, text="Social Distance \nKhoảng cách xã hội \nដស្វែងnរកងដងខ្ព។  ", font='System, 7', anchor='c')
+        elif content['alert_type'] == "Drought":
+            self.draw_drought()
+            self.canvas.create_text(67, 204, text="Save Water \nKhoảng cách xã hội \nដស្វែងnរកងដងខ្ព។  ", font='System, 7', anchor='c')
+        else:
+            self.draw_warning()
+            self.canvas.create_text(67, 204, text="Social Distance \nKhoảng cách xã hội \nដស្វែងnរកងដងខ្ព។  ", font='System, 7', anchor='c')
 
-        # Draw a rectangle to represent the display border
-        self.canvas.create_rectangle(1, 1, self.canvas_width-1, self.canvas_height-1, outline='black')
-
-        # Draw some text
-        self.canvas.create_text(self.canvas_width//2, self.canvas_height//2, text=content["info"], fill="black", font=("Arial", 10))
 
 
+    def draw_triangle(self):
+        self.canvas.delete("triangle")
+        side_length = min(self.canvas_width, self.canvas_height) - 40
+        height = (math.sqrt(3) / 2) * side_length
+        triangle_center_x, triangle_center_y = self.canvas_width // 2, self.canvas_height // 4
+
+        triangle_vertices = [
+            (triangle_center_x, triangle_center_y - height / 2),
+            (triangle_center_x - side_length / 2, triangle_center_y + height / 2),
+            (triangle_center_x + side_length / 2, triangle_center_y + height / 2)
+        ]
+
+        self.canvas.create_line(*triangle_vertices[0], *triangle_vertices[1], fill='red', width=7, tags="triangle")
+        self.canvas.create_line(*triangle_vertices[1], *triangle_vertices[2], fill='red', width=7, tags="triangle")
+        self.canvas.create_line(*triangle_vertices[2], *triangle_vertices[0], fill='red', width=7, tags="triangle")
+
+        return tuple(sum(triangle_vertices, ()))
+
+    def draw_warning(self):
+        # Pass triangle coordinates
+        triangle_coords = self.draw_triangle()
+
+        # Calculate triangle center
+        triangle_center_x = sum(triangle_coords[::2]) // 3
+        triangle_center_y = sum(triangle_coords[1::2]) // 3
+
+        # Draw the exclamation mark
+        exclamation_width, exclamation_height, exclamation_radius = 5, 30, 5
+        self.canvas.create_rectangle(triangle_center_x - exclamation_width // 2, triangle_center_y - exclamation_height,
+                                     triangle_center_x + exclamation_width // 2, triangle_center_y, fill="black")
+        self.canvas.create_oval(triangle_center_x - exclamation_radius, triangle_center_y + 7,
+                                triangle_center_x + exclamation_radius, triangle_center_y + 7 + 2 * exclamation_radius,
+                                fill="black")
+
+        # Draw the text below the triangle
+        self.canvas.create_text(self.canvas_width // 2, 25 + self.canvas_height // 2,
+                                text="WARNING", fill="black", font=("Arial", 16, "bold"))
+
+        # Redraw the triangle
+        self.draw_triangle()
+
+    def draw_flood(self):
+        # House and triangle coordinates
+        (triangle_x1, triangle_y1, triangle_x2, triangle_y2, triangle_x3, triangle_y3) = self.draw_triangle()
+        triangle_center_x, triangle_center_y = (triangle_x1 + triangle_x2 + triangle_x3) // 3, (
+                    triangle_y1 + triangle_y2 + triangle_y3) // 3
+        house_size, door_height, door_width = 20, 8, 4
+        house_top_left_x, house_top_left_y, house_bottom_right_x, house_bottom_right_y = triangle_center_x - house_size // 2, triangle_center_y - house_size // 2 - 6, triangle_center_x + house_size // 2, triangle_center_y + house_size // 2 - 6
+        door_top_left_x, door_top_left_y, door_bottom_right_x, door_bottom_right_y = triangle_center_x - door_width // 2, triangle_center_y - door_height // 2, triangle_center_x + door_width // 2, triangle_center_y + door_height // 2
+        roof_x1, roof_y1, roof_x2, roof_y2, roof_x3, roof_y3 = house_top_left_x - 5, house_top_left_y, house_bottom_right_x + 5, house_top_left_y, triangle_center_x, house_top_left_y - 12
+
+        # Wave coordinates
+        wave_amplitude, num_segments = 3, 10
+        wave_start_x, wave_end_x = house_top_left_x - 26, house_bottom_right_x + 26
+        segment_length = (wave_end_x - wave_start_x) / num_segments
+
+        for i in range(num_segments):
+            x1 = wave_start_x + i * segment_length
+            x2, y2 = x1 + segment_length / 2, house_bottom_right_y + (wave_amplitude * (-1) ** i)
+            x3 = x2 + segment_length / 2
+            for y in [6, 13]:
+                self.canvas.create_line(x1, house_bottom_right_y + y, x2, y2 + y, fill='black', width=3)
+                self.canvas.create_line(x2, y2 + y, x3, house_bottom_right_y + y, fill='black', width=3)
+
+        # Draw the house
+        for coords in [
+            (house_top_left_x, house_top_left_y, house_bottom_right_x, house_bottom_right_y, 'black', 'black'),
+            (door_top_left_x, door_top_left_y, door_bottom_right_x, door_bottom_right_y, 'white', 'white')]:
+            self.canvas.create_rectangle(*coords[:4], outline=coords[4], fill=coords[5])
+        self.canvas.create_polygon(roof_x1, roof_y1, roof_x2, roof_y2, roof_x3, roof_y3, outline='black', fill='black')
+
+        # Draw the text below the triangle
+        self.canvas.create_text(self.canvas_width // 2, 25 + self.canvas_height // 2, text="FLOOD", fill="black",
+                                font=("Arial", 16, "bold"))
+
+        # Redraw the triangle
+        self.draw_triangle()
+
+    def draw_typhoon(self):
+        # Pass triangle coordinates
+        (triangle_x1, triangle_y1, triangle_x2, triangle_y2, triangle_x3, triangle_y3) = self.draw_triangle()
+
+        # Center of the triangle
+        triangle_center_x = (triangle_x1 + triangle_x2 + triangle_x3) // 3
+        triangle_center_y = (triangle_y1 + triangle_y2 + triangle_y3) // 3
+
+        # Draw typhoon
+        arc_width = 12
+        self.canvas.create_arc(triangle_center_x + 15, triangle_center_y - 10, triangle_center_x,
+                               triangle_center_y + 10,
+                               start=0, extent=-180, style="arc", width=arc_width)
+        self.canvas.create_arc(triangle_center_x - 15, triangle_center_y - 15, triangle_center_x + 10,
+                               triangle_center_y,
+                               start=90, extent=-180, style="arc", width=arc_width)
+        self.canvas.create_arc(triangle_center_x - 15, triangle_center_y + 10, triangle_center_x,
+                               triangle_center_y - 10,
+                               start=180, extent=-180, style="arc", width=arc_width)
+        self.canvas.create_arc(triangle_center_x + 15, triangle_center_y + 15, triangle_center_x - 10,
+                               triangle_center_y,
+                               start=270, extent=-180, style="arc", width=arc_width)
+
+        # Draw the text below the triangle
+        self.canvas.create_text(self.canvas_width // 2, 25 + self.canvas_height // 2, text="TYPHOON", fill="black",
+                                font=("Arial", 16, "bold"))
+
+        # Redraw the triangle
+        self.draw_triangle()
+
+    def draw_heatwave(self):
+        # Get triangle coordinates
+        triangle_coords = self.draw_triangle()
+        triangle_center_x = sum(triangle_coords[::2]) // 3
+        triangle_center_y = sum(triangle_coords[1::2]) // 3
+
+        # Draw sun
+        sun_radius = 13
+        for i in range(0, 360, 45):
+            angle_rad = math.radians(i)
+            sun_x1 = triangle_center_x + sun_radius * math.cos(angle_rad)
+            sun_y1 = triangle_center_y + sun_radius * math.sin(angle_rad)
+            sun_x2 = triangle_center_x + (sun_radius + 5) * math.cos(angle_rad)
+            sun_y2 = triangle_center_y + (sun_radius + 5) * math.sin(angle_rad)
+            self.canvas.create_line(sun_x1, sun_y1, sun_x2, sun_y2, fill="black", width=5)
+        self.canvas.create_oval(triangle_center_x - sun_radius, triangle_center_y - sun_radius,
+                                triangle_center_x + sun_radius, triangle_center_y + sun_radius, fill="black")
+
+        # Draw waves
+        wave_amplitude, num_segments = 3, 8
+        segment_length = 36 / num_segments
+        for i in range(num_segments):
+            wave_x1 = triangle_center_x - 18 + i * segment_length
+            wave_x2, wave_y2 = wave_x1 + segment_length / 2, triangle_center_y + (wave_amplitude * (-1) ** i)
+            wave_x3 = wave_x2 + segment_length / 2
+            for wave_offset in (-6, 4, 14):
+                self.canvas.create_line(wave_x1, triangle_center_y + wave_offset, wave_x2, wave_y2 + wave_offset,
+                                        fill='red', width=2)
+                self.canvas.create_line(wave_x2, wave_y2 + wave_offset, wave_x3, triangle_center_y + wave_offset,
+                                        fill='red', width=2)
+
+        # Draw text
+        self.canvas.create_text(self.canvas_width // 2, 25 + self.canvas_height // 2, text="HEATWAVE",
+                                fill="black", font=("Arial", 16, "bold"))
+
+        # Redraw triangle
+        self.draw_triangle()
+
+    def draw_disease(self):
+        # Pass triangle coordinates
+        (triangle_x1, triangle_y1, triangle_x2, triangle_y2, triangle_x3, triangle_y3) = self.draw_triangle()
+
+        # Function to draw disease and lines
+        def draw_disease_at(center_x, center_y, radius, line_length, line_width):
+            for i in range(8):
+                angle = math.radians(i * 45)
+                start_x = center_x + radius * math.cos(angle)
+                start_y = center_y + radius * math.sin(angle)
+                end_x = center_x + (radius + line_length) * math.cos(angle)
+                end_y = center_y + (radius + line_length) * math.sin(angle)
+                self.canvas.create_line(start_x, start_y, end_x, end_y, fill="black", width=line_width)
+            self.canvas.create_oval(center_x - radius, center_y - radius, center_x + radius, center_y + radius,
+                                    fill="black", outline="black")
+
+        # Draw diseases at different positions
+        draw_disease_at(triangle_x1 - 10, (triangle_y1 + triangle_y2 + triangle_y3) // 3 + 7, 9, 4, 3)
+        draw_disease_at((triangle_x1 + triangle_x2 + triangle_x3) // 3 + 3, triangle_y1 + 35, 6, 3, 2)
+        draw_disease_at(triangle_x1 + 13, (triangle_y1 + triangle_y2 + triangle_y3) // 3 + 5, 4, 3, 2)
+
+        # Draw the text below the triangle
+        self.canvas.create_text(self.canvas_width // 2, 25 + self.canvas_height // 2, text="OUTBREAK", fill="black",
+                                font=("Arial", 16, "bold"))
+
+        # Redraw the triangle
+        self.draw_triangle()
+
+    def draw_drought(self):
+        # Get triangle coordinates
+        triangle_coords = self.draw_triangle()
+        triangle_center_x = sum(triangle_coords[::2]) // 3
+        triangle_center_y = sum(triangle_coords[1::2]) // 3
+
+        # Droplet coordinates
+        droplet_x1 = triangle_center_x - 12
+        droplet_y1 = triangle_center_y + 5
+        droplet_x2 = triangle_center_x + 12
+        droplet_y2 = triangle_center_y + 5
+        droplet_x3 = triangle_center_x
+        droplet_y3 = triangle_center_y - 15
+
+        # Draw the droplet
+        self.canvas.create_arc(triangle_center_x - 10, triangle_center_y - 5, triangle_center_x + 10,
+                               triangle_center_y + 15,
+                               start=180, extent=180, style='pieslice', fill="black")
+        self.canvas.create_polygon(droplet_x1, droplet_y1, droplet_x2, droplet_y2, droplet_x3, droplet_y3, fill='black')
+
+        # Draw the cross
+        cross_length = 14
+        self.canvas.create_line(triangle_center_x - cross_length, triangle_center_y - cross_length,
+                                triangle_center_x + cross_length, triangle_center_y + cross_length, fill="red", width=4)
+        self.canvas.create_line(triangle_center_x - cross_length, triangle_center_y + cross_length,
+                                triangle_center_x + cross_length, triangle_center_y - cross_length, fill="red", width=4)
+
+        # Draw the text below the triangle
+        self.canvas.create_text(self.canvas_width // 2, 25 + self.canvas_height // 2, text="DROUGHT", fill="black",
+                                font=("Arial", 16, "bold"))
+
+        # Redraw the triangle
+        self.draw_triangle()
+
+    def no_alerts(self):
+        self.canvas.create_text(self.canvas_width // 2, self.canvas_height // 2, text="No Alerts", fill="black", font=("Arial", 14, "bold"))
 
 
 if __name__ == "__main__":
@@ -191,7 +461,5 @@ if __name__ == "__main__":
 
     # start the receiver thread and show the screen
     threading.Thread(target=receiver.listen, daemon=True).start()
+    display.no_alerts()
     display.run()
-
-
-
