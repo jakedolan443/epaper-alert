@@ -211,22 +211,22 @@ class EPaperDisplayDummy():
 
         if content['alert_type'] == "Flood":
             self.draw_flood()
-            self.canvas.create_text(67, 204, text="Move to higher ground \ntìm kiếm vùng đất caot \nស្វែងរកដីខ្ពស់ស្វែងរកជង។  ", font='System, 7', anchor='c')
+            self.canvas.create_text(67, 224, text="Move to higher ground \ntìm kiếm vùng đất caot \nស្វែងរកដីខ្ពស់ស្វែងរកជង។  ", font='System, 7', anchor='c')
         elif content['alert_type'] == "Typhoon":
             self.draw_typhoon()
-            self.canvas.create_text(67, 204, text="Seek shelter \ntìm nơi trú ẩn \nស្វែងរកដីខ្ព។  ", font='System, 7', anchor='c')
+            self.canvas.create_text(67, 224, text="Seek shelter \ntìm nơi trú ẩn \nស្វែងរកដីខ្ព។  ", font='System, 7', anchor='c')
         elif content['alert_type'] == "Heatwave":
             self.draw_heatwave()
-            self.canvas.create_text(67, 204, text="Avoid sun \ntiết kiệm nước \n ស្វែងរកដីខ្ព។  ", font='System, 7', anchor='c')
+            self.canvas.create_text(67, 224, text="Avoid sun \ntiết kiệm nước \n ស្វែងរកដីខ្ព។  ", font='System, 7', anchor='c')
         elif content['alert_type'] == "Disease":
             self.draw_disease()
-            self.canvas.create_text(67, 204, text="Social Distance \nKhoảng cách xã hội \nដស្វែងnរកងដងខ្ព។  ", font='System, 7', anchor='c')
+            self.canvas.create_text(67, 224, text="Social Distance \nKhoảng cách xã hội \nដស្វែងnរកងដងខ្ព។  ", font='System, 7', anchor='c')
         elif content['alert_type'] == "Drought":
             self.draw_drought()
-            self.canvas.create_text(67, 204, text="Save Water \nKhoảng cách xã hội \nដស្វែងnរកងដងខ្ព។  ", font='System, 7', anchor='c')
+            self.canvas.create_text(67, 224, text="  Save Water  \nKhoảng cách xã hội \nដស្វែងnរកងដងខ្ព។  ", font='System, 7', anchor='c')
         else:
             self.draw_warning()
-            self.canvas.create_text(67, 204, text="Social Distance \nKhoảng cách xã hội \nដស្វែងnរកងដងខ្ព។  ", font='System, 7', anchor='c')
+            self.canvas.create_text(67, 224, text="Social Distance \nKhoảng cách xã hội \nដស្វែងnរកងដងខ្ព។  ", font='System, 7', anchor='c')
 
 
 
