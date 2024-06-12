@@ -1,6 +1,6 @@
 # ------------------------------------------------------------------------------ #
 #
-# Authors: Jake Dolan, ... (add your name here if you contributed to the file)
+# Authors: Jake Dolan, Faizan Khan, Matthew Savage, Rory White
 #
 # File:    epaper-groupdevelopmentfile.py
 #
@@ -113,7 +113,7 @@ class AlertSystem:
 
 # ------------------------------------------------------------------------------ #
 #
-# Authors: Jake Dolan
+# Authors: Jake Dolan, Matthew Savage
 #
 # Class:   AlertReceiver
 #
@@ -121,6 +121,11 @@ class AlertSystem:
 #          verification of the received data and authentication.
 #          This class is used by the AlertSystem class to receive data for the
 #          EPaperDisplay class.
+#
+# Notes: 12/06 15:31 Matthew| have changed verify_connection and split its main
+#                             function into two smaller functions for unit testing
+#                             and fixed a bug that was stopping the code from
+#                             finding the address in the array
 #
 # ------------------------------------------------------------------------------ #
 class AlertReceiver:
@@ -136,21 +141,29 @@ class AlertReceiver:
         # Send verified data to the alert system for further processing
         self.alert_handler.process_data(data)
 
-    def verify_connection(self, data, address):
-        # Implement the logic to verify that the connection comes from an intended host
-        # and contains the correct authentication keys
-
+    def verify_host(self, address):
         # Verify host
         intended_hosts = ['127.0.0.1', '192.168.1.1']  # Add intended hosts here
-        if address[0] not in intended_hosts:
+        if address not in intended_hosts:
             return False
+        else:
+            return True
 
+    def verify_data(self, data):
         # Verify authentication code
         auth_code = data[:4]
         if auth_code != b"1111":
             return False
+        else:
+            return True
 
-        return True
+    def verify_connection(self, data, address):
+        # Implement the logic to verify that the connection comes from an intended host
+        # and contains the correct authentication keys
+        if self.verify_data(data) and self.verify_connection(address):
+            return True
+        else:
+            return False
 
     def listen(self):
         # Set up a socket to listen for connections
@@ -169,6 +182,7 @@ class AlertReceiver:
                     else:
                         print(f"Connection from {addr} not verified or authentication failed.")
                 time.sleep(1)
+
 
 # ------------------------------------------------------------------------------ #
 #
@@ -209,6 +223,11 @@ class EPaperDisplayDummy():
     def draw_content(self, content):
         self.canvas.delete('all')
 
+        if content is None or not content:
+            self.draw_warning()
+            self.canvas.create_text(67, 224, text="General Alert \nThông báo chung \nThông báo chung.", font='System, 7', anchor='c')
+            return
+
         if content['alert_type'] == "Flood":
             self.draw_flood()
             self.canvas.create_text(67, 224, text="Move to higher ground \ntìm kiếm vùng đất caot \nស្វែងរកដីខ្ពស់ស្វែងរកជង។  ", font='System, 7', anchor='c')
@@ -226,7 +245,7 @@ class EPaperDisplayDummy():
             self.canvas.create_text(67, 224, text="  Save Water  \nKhoảng cách xã hội \nដស្វែងnរកងដងខ្ព។  ", font='System, 7', anchor='c')
         else:
             self.draw_warning()
-            self.canvas.create_text(67, 224, text="Social Distance \nKhoảng cách xã hội \nដស្វែងnរកងដងខ្ព។  ", font='System, 7', anchor='c')
+            self.canvas.create_text(67, 224, text="General Alert \nThông báo chung \nThông báo chung.")
 
 
 
@@ -275,31 +294,38 @@ class EPaperDisplayDummy():
         # House and triangle coordinates
         (triangle_x1, triangle_y1, triangle_x2, triangle_y2, triangle_x3, triangle_y3) = self.draw_triangle()
         triangle_center_x, triangle_center_y = (triangle_x1 + triangle_x2 + triangle_x3) // 3, (
-                    triangle_y1 + triangle_y2 + triangle_y3) // 3
+                triangle_y1 + triangle_y2 + triangle_y3) // 3
         house_size, door_height, door_width = 20, 8, 4
         house_top_left_x, house_top_left_y, house_bottom_right_x, house_bottom_right_y = triangle_center_x - house_size // 2, triangle_center_y - house_size // 2 - 6, triangle_center_x + house_size // 2, triangle_center_y + house_size // 2 - 6
         door_top_left_x, door_top_left_y, door_bottom_right_x, door_bottom_right_y = triangle_center_x - door_width // 2, triangle_center_y - door_height // 2, triangle_center_x + door_width // 2, triangle_center_y + door_height // 2
         roof_x1, roof_y1, roof_x2, roof_y2, roof_x3, roof_y3 = house_top_left_x - 5, house_top_left_y, house_bottom_right_x + 5, house_top_left_y, triangle_center_x, house_top_left_y - 12
 
-        # Wave coordinates
-        wave_amplitude, num_segments = 3, 10
+        # Straight line coordinates
+        num_segments = 10
         wave_start_x, wave_end_x = house_top_left_x - 26, house_bottom_right_x + 26
         segment_length = (wave_end_x - wave_start_x) / num_segments
 
+        # Draw the straight lines
         for i in range(num_segments):
             x1 = wave_start_x + i * segment_length
-            x2, y2 = x1 + segment_length / 2, house_bottom_right_y + (wave_amplitude * (-1) ** i)
-            x3 = x2 + segment_length / 2
+            x2 = x1 + segment_length
             for y in [6, 13]:
-                self.canvas.create_line(x1, house_bottom_right_y + y, x2, y2 + y, fill='black', width=3)
-                self.canvas.create_line(x2, y2 + y, x3, house_bottom_right_y + y, fill='black', width=3)
+                self.canvas.create_line(x1, house_bottom_right_y + y, x2, house_bottom_right_y + y, fill='black',
+                                        width=3)
 
         # Draw the house
         for coords in [
-            (house_top_left_x, house_top_left_y, house_bottom_right_x, house_bottom_right_y, 'black', 'black'),
-            (door_top_left_x, door_top_left_y, door_bottom_right_x, door_bottom_right_y, 'white', 'white')]:
+            (house_top_left_x, house_top_left_y + 2, house_bottom_right_x, house_bottom_right_y + 2, 'black', 'black'),
+            (door_top_left_x, door_top_left_y + 2, door_bottom_right_x, door_bottom_right_y + 2, 'white', 'white')]:
             self.canvas.create_rectangle(*coords[:4], outline=coords[4], fill=coords[5])
-        self.canvas.create_polygon(roof_x1, roof_y1, roof_x2, roof_y2, roof_x3, roof_y3, outline='black', fill='black')
+
+        # Draw the roof as individual lines
+        self.canvas.create_line(roof_x1 + 2, roof_y1, roof_x3, roof_y3, fill='black', width=4)
+        self.canvas.create_line(roof_x3, roof_y3, roof_x2 - 2, roof_y2, fill='black', width=4)
+        self.canvas.create_line(roof_x1 + 2, roof_y1, roof_x2 - 2, roof_y2, fill='black', width=4)
+        self.canvas.create_line(roof_x1 + 7, roof_y1 - 3, roof_x3, roof_y3 + 3, fill='black', width=6)
+        self.canvas.create_line(roof_x3, roof_y3 + 3, roof_x2 - 7, roof_y2 - 3, fill='black', width=6)
+        self.canvas.create_line(roof_x1 + 7, roof_y1 - 3, roof_x2 - 7, roof_y2 - 3, fill='black', width=6)
 
         # Draw the text below the triangle
         self.canvas.create_text(self.canvas_width // 2, 25 + self.canvas_height // 2, text="FLOOD", fill="black",
@@ -316,20 +342,34 @@ class EPaperDisplayDummy():
         triangle_center_x = (triangle_x1 + triangle_x2 + triangle_x3) // 3
         triangle_center_y = (triangle_y1 + triangle_y2 + triangle_y3) // 3
 
-        # Draw typhoon
-        arc_width = 12
-        self.canvas.create_arc(triangle_center_x + 15, triangle_center_y - 10, triangle_center_x,
-                               triangle_center_y + 10,
-                               start=0, extent=-180, style="arc", width=arc_width)
-        self.canvas.create_arc(triangle_center_x - 15, triangle_center_y - 15, triangle_center_x + 10,
-                               triangle_center_y,
-                               start=90, extent=-180, style="arc", width=arc_width)
-        self.canvas.create_arc(triangle_center_x - 15, triangle_center_y + 10, triangle_center_x,
-                               triangle_center_y - 10,
-                               start=180, extent=-180, style="arc", width=arc_width)
-        self.canvas.create_arc(triangle_center_x + 15, triangle_center_y + 15, triangle_center_x - 10,
-                               triangle_center_y,
-                               start=270, extent=-180, style="arc", width=arc_width)
+        # Adjusted start point
+        start_x = triangle_center_x
+        start_y = triangle_center_y
+
+        # NUmber of lines for each half of the symbol
+        num_lines = 24
+
+        # Length of each line
+        line_length = 7
+
+        # Draw half of the symbol, getting longer each time it iterates
+        for i in range(num_lines):
+            angle = math.radians(10 * i)
+            line_end_x = start_x + line_length * math.cos(angle)
+            line_end_y = start_y + line_length * math.sin(angle)
+            self.canvas.create_line(start_x, start_y, line_end_x, line_end_y, width=4)
+            line_length = line_length + 0.5
+
+        # Reset the length of each line
+        line_length = 7
+
+        # Draw the other half of the symbol, getting longer each time it iterates
+        for i in range(num_lines):
+            angle = math.radians(-10 * i)
+            line_end_x = start_x - line_length * math.cos(angle)
+            line_end_y = start_y + line_length * math.sin(angle)
+            self.canvas.create_line(start_x, start_y, line_end_x, line_end_y, width=4)
+            line_length = line_length + 0.5
 
         # Draw the text below the triangle
         self.canvas.create_text(self.canvas_width // 2, 25 + self.canvas_height // 2, text="TYPHOON", fill="black",
